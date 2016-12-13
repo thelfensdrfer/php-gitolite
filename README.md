@@ -6,7 +6,7 @@ Parse simple gitolite configs.
 
 * Users
 * Groups
-* Repositories and permissons
+* Repositories and permissions
 
 ### What cannot be parsed
 
