@@ -1,4 +1,4 @@
-## Gitolite config parser for PHP
+## Read config
 
 Parse simple gitolite configs.
 
@@ -22,3 +22,7 @@ $config = new VisualAppeal\Gitolite\Config($pathToConfig);
 var_dump($config->getGroups());
 var_dump($config->getRepositories());
 ```
+
+## Write config
+
+* Nothing done yet
