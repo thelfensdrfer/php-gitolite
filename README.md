@@ -16,7 +16,7 @@ Parse simple gitolite configs.
 
 ### Usage
 
-```
+```php
 $config = new VisualAppeal\Gitolite\Config($pathToConfig);
 
 var_dump($config->getGroups());
