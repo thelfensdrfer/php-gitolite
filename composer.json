@@ -1,0 +1,19 @@
+{
+    "name": "visualappeal/php-gitolite",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tim Helfensdörfer",
+            "email": "tim@visualappeal.de"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "phpunit/phpunit": "^5.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "VisualAppeal\\Gitolite\\": "src/"
+        }
+    }
+}
