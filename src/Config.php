@@ -62,7 +62,7 @@ class Config
 	const ERROR_PARSER_PERMISSION_LINE = 210;
 	const ERROR_PARSER_PERMISSION_TYPE = 215;
 	const ERROR_PARSER_PERMISSION_UNOKWN_TYPE = 218;
-
+	const ERROR_USER_KEY_NOT_VALID = 300;
 
 	/**
 	 * Create new parser instance.
@@ -101,7 +101,7 @@ class Config
 		if (isset($this->_groups[$name]))
 			return $this->_groups[$name];
 
-		$this->_groups[$name] = new Group($name);
+		$this->_groups[$name] = new Group($name, $this->_path);
 		return $this->_groups[$name];
 	}
 
@@ -116,7 +116,7 @@ class Config
 		if (isset($this->_users[$name]))
 			return $this->_users[$name];
 
-		$this->_users[$name] = new User($name);
+		$this->_users[$name] = new User($name, $this->_path);
 		return $this->_users[$name];
 	}
 

@@ -21,13 +21,21 @@ class Group
 	private $_users = [];
 
 	/**
+	 * Path to the config file.
+	 *
+	 * @var string
+	 */
+	private $_path;
+
+	/**
 	 * Create new group.
 	 *
 	 * @param string $name
 	 */
-	public function __construct($name)
+	public function __construct($name, $path)
 	{
 		$this->_name = $name;
+		$this->_path = $path;
 	}
 
 	/**
@@ -62,7 +70,7 @@ class Group
 		if (isset($this->_users[$name]))
 			return $this->_users[$name];
 
-		$this->_users[$name] = new User($name);
+		$this->_users[$name] = new User($name, $this->_path);
 		return $this->_users[$name];
 	}
 
