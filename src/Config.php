@@ -3,6 +3,7 @@
 namespace VisualAppeal\Gitolite;
 
 use VisualAppeal\Gitolite\Group;
+use VisualAppeal\Gitolite\PhpGitoliteException;
 use VisualAppeal\Gitolite\Repository;
 use VisualAppeal\Gitolite\User;
 
@@ -51,6 +52,16 @@ class Config
 	private $_parsingRepositories = [];
 
 	/**
+	 * Error codes for exceptions.
+	 */
+	const ERROR_CONFIG_NOT_EXISTS = 100;
+	const ERROR_CONFIG_NOT_READABLE = 110;
+	const ERROR_PARSER_GROUP = 200;
+	const ERROR_PARSER_PERMISSION_LINE = 210;
+	const ERROR_PARSER_PERMISSION_TYPE = 215;
+	const ERROR_PARSER_PERMISSION_UNOKWN_TYPE = 218;
+
+	/**
 	 * Create new parser instance.
 	 *
 	 * @param string $path Path to config
@@ -58,10 +69,10 @@ class Config
 	public function __construct($path)
 	{
 		if (!file_exists($path))
-			throw new \Exception(sprintf('Gitolite config file %s does not exist!', $path));
+			throw new PhpGitoliteException(sprintf('Gitolite config file %s does not exist!', $path), ERROR_CONFIG_NOT_EXISTS);
 
 		if (!is_readable($path))
-			throw new \Exception(sprintf('Gitolite config file %s is not readable!', $path));
+			throw new PhpGitoliteException(sprintf('Gitolite config file %s is not readable!', $path), ERROR_CONFIG_NOT_READABLE);
 
 		$this->_path = $path;
 		$this->config = file_get_contents($path);
@@ -181,7 +192,7 @@ class Config
 	protected function parseGroup($line, $i)
 	{
 		if (preg_match('/@([a-zA-z\-0-9]+)\s*?=\s*?(.*)/', $line, $matches) !== 1) {
-			throw new \Exception(sprintf('Could not parse group in line #%d: %s', $i, $line));
+			throw new PhpGitoliteException(sprintf('Could not parse group in line #%d: %s', $i, $line), ERROR_PARSER_GROUP);
 		}
 
 		$group = $this->createOrFindGroup(trim($matches[1]));
@@ -200,14 +211,14 @@ class Config
 		$permission = new Permission;
 
 		if (preg_match('/\s*?(.*)\s*?=\s*?(.*)/', $line, $matches) !== 1) {
-			throw new \Exception(sprintf('Could not parse permission in line #%d: %s', $i, $line));
+			throw new PhpGitoliteException(sprintf('Could not parse permission in line #%d: %s', $i, $line), ERROR_PARSER_PERMISSION_LINE);
 		}
 
 		$left = trim($matches[1]);
 		$userList = trim($matches[2]);
 
 		if (preg_match('/([\-\+RW]+)\s*?(.*?)/', $left, $matches) !== 1) {
-			throw new \Exception(sprintf('Could not parse permission type in line #%d: %s', $i, $line));
+			throw new PhpGitoliteException(sprintf('Could not parse permission type in line #%d: %s', $i, $line), ERROR_PARSER_PERMISSION_TYPE);
 		}
 
 		$permission->setRef(trim($matches[2]));
@@ -227,7 +238,7 @@ class Config
 				$permission->setPermission(Permission::PERMISSION_READ_WRITE_PLUS);
 				break;
 			default:
-				throw new \Exception(sprintf('Unknown permission type in line #%d: %s', $i, $permissionRaw));
+				throw new PhpGitoliteException(sprintf('Unknown permission type in line #%d: %s', $i, $permissionRaw), ERROR_PARSER_PERMISSION_UNOKWN_TYPE);
 				break;
 		}
 
