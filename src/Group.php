@@ -45,7 +45,7 @@ class Group
 	 *
 	 * @return array
 	 */
-	public function getUsers()
+	public function &getUsers()
 	{
 		return $this->_users;
 	}
@@ -64,6 +64,22 @@ class Group
 
 		$this->_users[$name] = new User($name);
 		return $this->_users[$name];
+	}
+
+	/**
+	 * Create or find group in group.
+	 *
+	 * @param string $name
+	 *
+	 * @return User
+	 */
+	public function createOrFindGroup(Group $group)
+	{
+		if (isset($this->_users[$group->getName()]))
+			return $this->_users[$group->getName()];
+
+		$this->_users[$group->getName()] = $group;
+		return $this->_users[$group->getName()];
 	}
 
 	/**

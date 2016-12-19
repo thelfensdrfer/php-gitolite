@@ -26,7 +26,7 @@ class User
 	 *
 	 * @return string
 	 */
-	public function getName()
+	public function &getName()
 	{
 		return $this->_name;
 	}

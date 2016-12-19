@@ -59,7 +59,7 @@ class Repository
 	 *
 	 * @return string
 	 */
-	public function getPermissions()
+	public function &getPermissions()
 	{
 		return $this->_permissions;
 	}

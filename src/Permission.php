@@ -47,7 +47,7 @@ class Permission
 	 *
 	 * @return int
 	 */
-	public function getPermission()
+	public function &getPermission()
 	{
 		return $this->_permission;
 	}
@@ -84,6 +84,16 @@ class Permission
 	}
 
 	/**
+	 * Get ref.
+	 *
+	 * @return string
+	 */
+	public function &getRef()
+	{
+		return $this->_ref;
+	}
+
+	/**
 	 * Add user.
 	 *
 	 * @param User $user
@@ -91,6 +101,26 @@ class Permission
 	public function addUser(User $user)
 	{
 		$this->_users[] = $user;
+	}
+
+	/**
+	 * Add group.
+	 *
+	 * @param Group $group
+	 */
+	public function addGroup(Group $group)
+	{
+		$this->_users[] = $group;
+	}
+
+	/**
+	 * Get the users.
+	 *
+	 * @return array
+	 */
+	public function &getUsers()
+	{
+		return $this->_users;
 	}
 
 	/**

@@ -56,10 +56,13 @@ class Config
 	 */
 	const ERROR_CONFIG_NOT_EXISTS = 100;
 	const ERROR_CONFIG_NOT_READABLE = 110;
+	const ERROR_CONFIG_NOT_OPENED = 115;
+	const ERROR_CONFIG_NOT_WRITABLE = 120;
 	const ERROR_PARSER_GROUP = 200;
 	const ERROR_PARSER_PERMISSION_LINE = 210;
 	const ERROR_PARSER_PERMISSION_TYPE = 215;
 	const ERROR_PARSER_PERMISSION_UNOKWN_TYPE = 218;
+
 
 	/**
 	 * Create new parser instance.
@@ -69,13 +72,16 @@ class Config
 	public function __construct($path)
 	{
 		if (!file_exists($path))
-			throw new PhpGitoliteException(sprintf('Gitolite config file %s does not exist!', $path), ERROR_CONFIG_NOT_EXISTS);
+			throw new PhpGitoliteException(sprintf('Gitolite config file %s does not exist!', $path), self::ERROR_CONFIG_NOT_EXISTS);
 
 		if (!is_readable($path))
-			throw new PhpGitoliteException(sprintf('Gitolite config file %s is not readable!', $path), ERROR_CONFIG_NOT_READABLE);
+			throw new PhpGitoliteException(sprintf('Gitolite config file %s is not readable!', $path), self::ERROR_CONFIG_NOT_READABLE);
 
 		$this->_path = $path;
 		$this->config = file_get_contents($path);
+
+		if ($this->config === false)
+			throw new PhpGitoliteException(sprintf('Gitolite config file %s could not opened!', $path), self::ERROR_CONFIG_NOT_OPENED);
 
 		$i = 1;
 		foreach (preg_split("/((\r?\n)|(\r\n?))/", $this->config) as $line) {
@@ -141,10 +147,7 @@ class Config
 
 		if (substr($user, 0, 1) === '@') {
 			$groupExpanded = $this->createOrFindGroup(trim(substr($user, 1)));
-			$usersExpanded = $groupExpanded->getUsers();
-			foreach ($usersExpanded as $user) {
-				$users[] = $user->getName();
-			}
+			$users[] = $groupExpanded;
 		} else {
 			$users[] = trim($user);
 		}
@@ -169,8 +172,11 @@ class Config
 			foreach ($users as $user) {
 				$userNames = $this->parseUserlist($user);
 
-				foreach ($userNames as $user) {
-					$group->createOrFindUser($user);
+				foreach ($userNames as $userOrGroup) {
+					if (is_string($userOrGroup))
+						$group->createOrFindUser($userOrGroup);
+					else
+						$group->createOrFindGroup($userOrGroup);
 				}
 			}
 		} else {
@@ -192,7 +198,7 @@ class Config
 	protected function parseGroup($line, $i)
 	{
 		if (preg_match('/@([a-zA-z\-0-9]+)\s*?=\s*?(.*)/', $line, $matches) !== 1) {
-			throw new PhpGitoliteException(sprintf('Could not parse group in line #%d: %s', $i, $line), ERROR_PARSER_GROUP);
+			throw new PhpGitoliteException(sprintf('Could not parse group in line #%d: %s', $i, $line), self::ERROR_PARSER_GROUP);
 		}
 
 		$group = $this->createOrFindGroup(trim($matches[1]));
@@ -211,14 +217,14 @@ class Config
 		$permission = new Permission;
 
 		if (preg_match('/\s*?(.*)\s*?=\s*?(.*)/', $line, $matches) !== 1) {
-			throw new PhpGitoliteException(sprintf('Could not parse permission in line #%d: %s', $i, $line), ERROR_PARSER_PERMISSION_LINE);
+			throw new PhpGitoliteException(sprintf('Could not parse permission in line #%d: %s', $i, $line), self::ERROR_PARSER_PERMISSION_LINE);
 		}
 
 		$left = trim($matches[1]);
 		$userList = trim($matches[2]);
 
 		if (preg_match('/([\-\+RW]+)\s*?(.*?)/', $left, $matches) !== 1) {
-			throw new PhpGitoliteException(sprintf('Could not parse permission type in line #%d: %s', $i, $line), ERROR_PARSER_PERMISSION_TYPE);
+			throw new PhpGitoliteException(sprintf('Could not parse permission type in line #%d: %s', $i, $line), self::ERROR_PARSER_PERMISSION_TYPE);
 		}
 
 		$permission->setRef(trim($matches[2]));
@@ -238,13 +244,16 @@ class Config
 				$permission->setPermission(Permission::PERMISSION_READ_WRITE_PLUS);
 				break;
 			default:
-				throw new PhpGitoliteException(sprintf('Unknown permission type in line #%d: %s', $i, $permissionRaw), ERROR_PARSER_PERMISSION_UNOKWN_TYPE);
+				throw new PhpGitoliteException(sprintf('Unknown permission type in line #%d: %s', $i, $permissionRaw), self::ERROR_PARSER_PERMISSION_UNOKWN_TYPE);
 				break;
 		}
 
 		$users = $this->parseUserlist($userList);
-		foreach ($users as $user) {
-			$permission->addUser($this->createOrFindUser($user));
+		foreach ($users as $userOrGroup) {
+			if (is_string($userOrGroup))
+				$permission->addUser($this->createOrFindUser($userOrGroup));
+			else
+				$permission->addGroup($this->createOrFindGroup($userOrGroup->getName()));
 		}
 
 		return $permission;
@@ -312,12 +321,66 @@ class Config
 		}
 	}
 
+	protected function generateConfig()
+	{
+		$config = '';
+		foreach ($this->_groups as $name => $group) {
+			$config .= '@' . $name;
+			$users = $group->getUsers();
+			if (count($users) > 0) {
+				$config .= ' = ' . implode(' ', array_map(function($userOrGroup) {
+					if (get_class($userOrGroup) == 'VisualAppeal\Gitolite\User')
+						return $userOrGroup->getName();
+					else
+						return '@' . $userOrGroup->getName();
+				}, $users));
+			}
+			$config .= "\n";
+		}
+
+		if (count($this->_groups))
+			$config .= "\n";
+
+		foreach ($this->_repostitories as $name => $repository) {
+			$config .= 'repo ' . $name . "\n";
+			$permissions = $repository->getPermissions();
+			foreach ($permissions as $permission) {
+				$config .= '  ' . implode(' ', array_filter([
+						$permission->getPermissionString(),
+						$permission->getRef(),
+						'=',
+						implode(' ', array_map(function($userOrGroup) {
+							if (get_class($userOrGroup) == 'VisualAppeal\Gitolite\User')
+								return $userOrGroup->getName();
+							else
+								return '@' . $userOrGroup->getName();
+						}, $permission->getUsers())),
+					], function($filter) {
+						return !empty(trim($filter));
+					})) . "\n";
+			}
+			$config .= "\n";
+		}
+
+		return $config;
+	}
+
+	public function saveAs($path)
+	{
+		$config = $this->generateConfig();
+
+		if (file_exists($path) && !is_writable($path))
+			throw new PhpGitoliteException(sprintf('Gitolite config file %s is not writable!', $path), self::ERROR_CONFIG_NOT_WRITABLE);
+
+		return file_put_contents($path, $config) !== false;
+	}
+
 	/**
 	 * Return groups.
 	 *
 	 * @return array
 	 */
-	public function getGroups()
+	public function &getGroups()
 	{
 		return $this->_groups;
 	}
@@ -327,7 +390,7 @@ class Config
 	 *
 	 * @return array
 	 */
-	public function getRepositories()
+	public function &getRepositories()
 	{
 		return $this->_repostitories;
 	}
