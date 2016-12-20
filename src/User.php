@@ -149,4 +149,39 @@ class User
 
 		return true;
 	}
+
+	/**
+	 * Check if the user has access to the repository.
+	 *
+	 * @param Repository $repository
+	 * @return boolean
+	 */
+	public function hasAccess(Repository $repository, $allGroups)
+	{
+		// Get groups the user is in
+		$groups = [];
+		foreach ($allGroups as $group) {
+			if (array_key_exists($this->getName(), $group->getUsers()))
+				$groups[$group->getName()] = $group;
+		}
+
+		foreach ($repository->getPermissions() as $permission) {
+			// Check every permission of each repository
+			foreach ($permission->getUsers() as $userOrGroupWithPermission) {
+				if (get_class($userOrGroupWithPermission) == 'VisualAppeal\Gitolite\User') {
+					// Check if user has access to the repository
+					if ($userOrGroupWithPermission->getName() === $this->getName())
+						return true;
+				} else {
+					// Check if a group the user is member of has access to the repository
+					foreach ($groups as $group) {
+						if ($userOrGroupWithPermission->getName() === $group->getName())
+							return true;
+					}
+				}
+			}
+		}
+
+		return false;
+	}
 }

@@ -14,7 +14,7 @@ class ConfigTest extends TestCase
 	 */
 	protected function subtestConfig($path)
 	{
-		$config = new Config($path);
+		$config = new Config($path, false);
 		$groups = $config->getGroups();
 		$repositories = $config->getRepositories();
 
@@ -27,6 +27,11 @@ class ConfigTest extends TestCase
 			$this->assertEquals($groupCount[$i], count($group->getUsers()));
 			$i++;
 		}
+	}
+
+	public function testGit()
+	{
+		$config = new Config(__DIR__ . '/fixtures/test.conf');
 	}
 
 	/**
@@ -46,7 +51,7 @@ class ConfigTest extends TestCase
 	 */
 	public function testWriter()
 	{
-		$config = new Config(__DIR__ . '/fixtures/test.conf');
+		$config = new Config(__DIR__ . '/fixtures/test.conf', false);
 		$config->saveAs(__DIR__ . '/fixtures/test_writer.conf');
 
 		$this->subtestConfig(__DIR__ . '/fixtures/test_writer.conf');
@@ -59,7 +64,7 @@ class ConfigTest extends TestCase
 	 */
 	public function testUserKeys()
 	{
-		$config = new Config(__DIR__ . '/fixtures/test.conf');
+		$config = new Config(__DIR__ . '/fixtures/test.conf', false);
 		$adminGroup = $config->getGroups()['gitolite-admin'];
 		$tim = $adminGroup->getUsers()['tim'];
 		$admin = $adminGroup->getUsers()['admin'];
@@ -83,7 +88,7 @@ class ConfigTest extends TestCase
 	 */
 	public function testAddUser()
 	{
-		$config = new Config(__DIR__ . '/fixtures/test.conf');
+		$config = new Config(__DIR__ . '/fixtures/test.conf', false);
 		$adminGroup = &$config->getGroups()['gitolite-admin'];
 		$adminGroup->addUser('tom', [
 			'keys' => [
@@ -94,5 +99,23 @@ class ConfigTest extends TestCase
 		$config = new Config(__DIR__ . '/fixtures/test_add_user.conf');
 		$adminGroup = &$config->getGroups()['gitolite-admin'];
 		$this->assertEquals(4, count($adminGroup->getUsers()));
+	}
+
+	/**
+	 * Test if the permissions are paresed correctly.
+	 *
+	 * @return void
+	 */
+	public function testRepositoryAccess()
+	{
+		$config = new Config(__DIR__ . '/fixtures/test.conf', false);
+		$adminGroup = &$config->getGroups()['gitolite-admin'];
+		$admin = $adminGroup->getUsers()['admin'];
+
+		$group1 = &$config->getGroups()['group1'];
+		$a = $group1->getUsers()['a'];
+
+		$this->assertEquals(6, count($config->getRepositoriesForUser($admin)));
+		$this->assertEquals(2, count($config->getRepositoriesForUser($a)));
 	}
 }

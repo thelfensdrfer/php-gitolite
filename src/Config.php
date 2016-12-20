@@ -419,6 +419,24 @@ class Config
 	}
 
 	/**
+	 * Get repositories the user has access to.
+	 *
+	 * @param User $user
+	 * @return array
+	 */
+	public function &getRepositoriesForUser(User $user)
+	{
+		$repositories = [];
+
+		foreach ($this->getRepositories() as $repository) {
+			if ($user->hasAccess($repository, $this->getGroups()))
+				$repositories[$repository->getName()] = $repository;
+		}
+
+		return $repositories;
+	}
+
+	/**
 	 * Pull changes.
 	 *
 	 * @param string $remote
