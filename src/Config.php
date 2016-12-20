@@ -52,27 +52,38 @@ class Config
 	private $_parsingRepositories = [];
 
 	/**
+	 * Git repository
+	 *
+	 * @var Cz\Git\GitRepository
+	 */
+	private $_git;
+
+	/**
 	 * Error codes for exceptions.
 	 */
 	const ERROR_CONFIG_NOT_EXISTS = 100;
 	const ERROR_CONFIG_NOT_READABLE = 110;
-	const ERROR_CONFIG_NOT_OPENED = 115;
-	const ERROR_CONFIG_NOT_WRITABLE = 120;
+	const ERROR_CONFIG_NO_REPOSITORY = 120;
+	const ERROR_CONFIG_NOT_OPENED = 130;
+	const ERROR_CONFIG_NOT_WRITABLE = 140;
 	const ERROR_PARSER_GROUP = 200;
 	const ERROR_PARSER_PERMISSION_LINE = 210;
 	const ERROR_PARSER_PERMISSION_TYPE = 215;
 	const ERROR_PARSER_PERMISSION_UNOKWN_TYPE = 218;
 	const ERROR_USER_KEY_INVALID_INDEX = 300;
 	const ERROR_GROUP_USER_ALREADY_EXISTS = 400;
-	const ERROR_GROUP_USER_KEY_NOT_FOUND = 405;
-	const ERROR_GROUP_USER_NOT_MOVABLE = 408;
+	const ERROR_GROUP_USER_KEY_NOT_FOUND = 410;
+	const ERROR_GROUP_USER_NOT_MOVABLE = 420;
 
 	/**
 	 * Create new parser instance.
 	 *
 	 * @param string $path Path to config
+	 * @param boolean $pull If the repository should be pulled before parsing
+	 * @param string $remote
+	 * @param array $params Git pull parameters
 	 */
-	public function __construct($path)
+	public function __construct($path, $pull = true, $remote = null, array $params = null)
 	{
 		if (!file_exists($path))
 			throw new PhpGitoliteException(sprintf('Gitolite config file %s does not exist!', $path), self::ERROR_CONFIG_NOT_EXISTS);
@@ -82,6 +93,13 @@ class Config
 
 		$this->_path = $path;
 		$this->config = file_get_contents($path);
+
+		try {
+			$this->_git = new \Cz\Git\GitRepository(dirname(dirname($path)));
+			$this->pull($remote, $params);
+		} catch (Cz\Git\GitException $e) {
+			throw new PhpGitoliteException(sprintf('Invalid repository %s: %s', $path, $e->getMessage()), self::ERROR_CONFIG_NO_REPOSITORY);
+		}
 
 		if ($this->config === false)
 			throw new PhpGitoliteException(sprintf('Gitolite config file %s could not opened!', $path), self::ERROR_CONFIG_NOT_OPENED);
@@ -396,6 +414,56 @@ class Config
 	public function &getRepositories()
 	{
 		return $this->_repostitories;
+	}
+
+	/**
+	 * Pull changes.
+	 *
+	 * @param string $remote
+	 * @param array $params
+	 * @return void
+	 */
+	public function pull($remote = null, array $params = null)
+	{
+		$this->_git->pull($remote, $params);
+	}
+
+	/**
+	 * Commit latest changes.
+	 *
+	 * @param string $message
+	 * @return void
+	 */
+	public function commit($message = '[php-gitolite] Updated config')
+	{
+		$this->_git->addAllChanges();
+		$this->_git->commit($message);
+	}
+
+	/**
+	 * Push changes.
+	 *
+	 * @param string $remote
+	 * @param array $params
+	 * @return void
+	 */
+	public function push($remote = null, array $params = null)
+	{
+		$this->_git->push($remote, $params);
+	}
+
+	/**
+	 * Commit latest changes and push.
+	 *
+	 * @param string $message
+	 * @param string $remote
+	 * @param array $params
+	 * @return void
+	 */
+	public function commitAndPush($message = '[php-gitolite] Updated config', $remote = null, array $params = null)
+	{
+		$this->commit($message);
+		$this->push($remote, $params);
 	}
 
 	/**
