@@ -96,7 +96,9 @@ class Config
 
 		try {
 			$this->_git = new \Cz\Git\GitRepository(dirname(dirname($path)));
-			$this->pull($remote, $params);
+
+			if ($pull)
+				$this->pull($remote, $params);
 		} catch (Cz\Git\GitException $e) {
 			throw new PhpGitoliteException(sprintf('Invalid repository %s: %s', $path, $e->getMessage()), self::ERROR_CONFIG_NO_REPOSITORY);
 		}
