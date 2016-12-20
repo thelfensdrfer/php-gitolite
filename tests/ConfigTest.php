@@ -65,8 +65,34 @@ class ConfigTest extends TestCase
 		$admin = $adminGroup->getUsers()['admin'];
 		$guy = $adminGroup->getUsers()['guy'];
 
+		$this->assertTrue($tim->hasKey());
 		$this->assertTrue($admin->hasKey());
 		$this->assertFalse($guy->hasKey());
-		$this->assertFalse($tim->hasKey());
+
+		$this->assertFalse($tim->validateKey());
+		$this->assertTrue($admin->validateKey());
+
+		$this->expectException(\VisualAppeal\Gitolite\PhpGitoliteException::class);
+		$guy->validateKey();
+	}
+
+	/**
+	 * Test if a user can be added.
+	 *
+	 * @return void
+	 */
+	public function testAddUser()
+	{
+		$config = new Config(__DIR__ . '/fixtures/test.conf');
+		$adminGroup = &$config->getGroups()['gitolite-admin'];
+		$adminGroup->addUser('tom', [
+			'keys' => [
+				__DIR__ . '/fixtures/tom.pub' => 'tom.pub'
+			]
+		]);
+		$config->saveAs(__DIR__ . '/fixtures/test_add_user.conf');
+		$config = new Config(__DIR__ . '/fixtures/test_add_user.conf');
+		$adminGroup = &$config->getGroups()['gitolite-admin'];
+		$this->assertEquals(4, count($adminGroup->getUsers()));
 	}
 }

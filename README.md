@@ -16,6 +16,8 @@ Parse simple gitolite configs.
 
 ### Usage
 
+Group[s] consist of of other Group[s] and User[s].
+
 ```php
 $config = new VisualAppeal\Gitolite\Config($pathToConfig);
 
@@ -25,4 +27,22 @@ var_dump($config->getRepositories());
 
 ## Write config
 
-* Nothing done yet
+### Save config after a change was made
+```php
+$config = new VisualAppeal\Gitolite\Config($pathToConfig);
+
+// Make changes
+// ...
+
+$config->saveAs($pathToNewOrOldConfig);
+```
+
+### Add user
+
+```php
+$config->getGroups()['admins']->addUser('tom', [
+	'keys' => [
+		'/absolute/path/to/public/key.pub' => 'relative/path/in/keydir.pub'
+	],
+]);
+```

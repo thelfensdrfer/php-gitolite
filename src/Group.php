@@ -59,6 +59,36 @@ class Group
 	}
 
 	/**
+	 * Add new user to group.
+	 *
+	 * @param string $name
+	 * @param array $options
+	 */
+	public function addUser($name, array $options = [])
+	{
+		if (isset($this->_users[$name]))
+			throw new PhpGitoliteException(sprintf('User %s already exists in group %s!', $name, $this->_name), Config::ERROR_GROUP_USER_ALREADY_EXISTS);
+
+		$user = new User($name, $this->_path);
+		if (isset($options['keys'])) {
+			$keyPath = dirname(dirname($this->_path)) . DIRECTORY_SEPARATOR . 'keydir';
+
+			foreach ($options['keys'] as $path => $newName) {
+				if (!file_exists($path))
+					throw new PhpGitoliteException(sprintf('Key %s does not exist!', $path), Config::ERROR_GROUP_USER_KEY_NOT_FOUND);
+
+				$newPath = $keyPath . DIRECTORY_SEPARATOR . $newName;
+				if (!copy($path, $newPath))
+					throw new PhpGitoliteException(sprintf('Could not copy key from %s to %s!', $path, $newPath), Config::ERROR_GROUP_USER_NOT_MOVABLE);
+
+				$user->addKey($newPath);
+			}
+		}
+
+		$this->_users[$name] = $user;
+	}
+
+	/**
 	 * Create or find user in group.
 	 *
 	 * @param string $name

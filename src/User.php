@@ -8,18 +8,25 @@ use VisualAppeal\Gitolite\PhpGitoliteException;
 class User
 {
 	/**
-	 * Name of the user
+	 * List of keys in keydir.
 	 *
-	 * @var string
+	 * @var array
 	 */
-	private $_name;
+	private static $_keys = [];
 
 	/**
 	 * Path to the key file of the user.
 	 *
 	 * @var string
 	 */
-	private $_keyPath;
+	private static $_keyPath = null;
+
+	/**
+	 * Name of the user
+	 *
+	 * @var string
+	 */
+	private $_name;
 
 	/**
 	 * Create new user.
@@ -29,9 +36,24 @@ class User
 	public function __construct($name, $path)
 	{
 		$this->_name = $name;
-		$this->_keyPath = dirname(dirname($path)) . DIRECTORY_SEPARATOR .
-			'keydir' . DIRECTORY_SEPARATOR .
-			$this->_name . '.pub';
+
+		if (self::$_keyPath === null) {
+			self::$_keyPath = dirname(dirname($path)) . DIRECTORY_SEPARATOR . 'keydir';
+
+			$objects = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(self::$_keyPath, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST);
+			foreach($objects as $filename => $object) {
+				if (!is_file($filename))
+					continue;
+
+				$pathInfo = pathinfo($filename);
+				$keyname = $pathInfo['filename'];
+
+				if (!isset(self::$_keys[$keyname]))
+					self::$_keys[$keyname] = [];
+
+				self::$_keys[$keyname][] = $filename;
+			}
+		}
 	}
 
 	/**
@@ -45,6 +67,17 @@ class User
 	}
 
 	/**
+	 * Add new public key to user.
+	 */
+	public function addKey($path)
+	{
+		if (!isset(self::$_keys[$this->_name]))
+			self::$_keys[$this->_name] = [];
+
+		self::$_keys[$this->_name][] = $path;
+	}
+
+	/**
 	 * Returns class as string.
 	 *
 	 * @return string
@@ -55,14 +88,39 @@ class User
 	}
 
 	/**
+	 * Check if the user has a valid key.
+	 *
+	 * @return boolean
+	 */
+	public function hasKey()
+	{
+		if (!isset(self::$_keys[$this->_name]))
+			return false;
+
+		return true;
+	}
+
+	/**
 	 * Validate if public key is a real ssh key.
 	 *
 	 * @see https://gist.github.com/jupeter/3248095
 	 * @param string $value
 	 * @return boolean
 	 */
-	protected function validateKey($value)
+	public function validateKey($index = 0)
 	{
+		if (!isset(self::$_keys[$this->_name][$index]))
+			throw new PhpGitoliteException(sprintf('Unknown index %d for user %s!', $index, $this->_name), Config::ERROR_USER_KEY_INVALID_INDEX);
+
+		// Get key from file
+		$filename = self::$_keys[$this->_name][$index];
+		if (!file_exists($filename) || !is_readable($filename))
+			return false;
+
+		$value = file_get_contents($filename);
+		if ($value === false)
+			return false;
+
 		$key_parts = explode(' ', $value, 3);
 
 		if (count($key_parts) < 2) {
@@ -90,18 +148,5 @@ class User
 		}
 
 		return true;
-	}
-
-	/**
-	 * Check if the user has a valid key.
-	 *
-	 * @return boolean
-	 */
-	public function hasKey()
-	{
-		if (!file_exists($this->_keyPath))
-			return false;
-
-		return $this->validateKey(file_get_contents($this->_keyPath));
 	}
 }
