@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/thelfensdrfer/php-gitolite.svg?branch=master)](https://travis-ci.org/thelfensdrfer/php-gitolite)
+
 ## Read config
 
 Parse simple gitolite configs.
