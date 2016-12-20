@@ -37,6 +37,7 @@ $config = new VisualAppeal\Gitolite\Config($pathToConfig);
 // ...
 
 $config->saveAs($pathToNewOrOldConfig);
+$config->commitAndPush();
 ```
 
 ### Add user
