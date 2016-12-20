@@ -61,9 +61,34 @@ class User
 	 *
 	 * @return string
 	 */
-	public function &getName()
+	public function getName()
 	{
 		return $this->_name;
+	}
+
+	/**
+	 * Return repository name.
+	 *
+	 * @return string
+	 */
+	public function getKeys()
+	{
+		if (!isset(self::$_keys[$this->_name]))
+			return [];
+
+		return self::$_keys[$this->_name];
+	}
+
+	/**
+	 * Remove key from config.
+	 *
+	 * @param string $path Relative path in keydir
+	 *
+	 * @return void
+	 */
+	public function removeKey($path)
+	{
+		return @unlink(self::$_keyPath . DIRECTORY_SEPARATOR . $path);
 	}
 
 	/**

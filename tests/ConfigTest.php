@@ -118,4 +118,15 @@ class ConfigTest extends TestCase
 		$this->assertEquals(6, count($config->getRepositoriesForUser($admin)));
 		$this->assertEquals(2, count($config->getRepositoriesForUser($a)));
 	}
+
+	public function testGetKeys()
+	{
+		$config = new Config(__DIR__ . '/fixtures/test.conf', false);
+		$adminGroup = &$config->getGroups()['gitolite-admin'];
+		$admin = $adminGroup->getUsers()['admin'];
+		$tim = $adminGroup->getUsers()['tim'];
+
+		$this->assertEquals(2, count($admin->getKeys()));
+		$this->assertEquals(1, count($tim->getKeys()));
+	}
 }
