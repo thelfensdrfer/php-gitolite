@@ -8,14 +8,14 @@ use VisualAppeal\Gitolite\PhpGitoliteException;
 class User
 {
 	/**
-	 * List of keys in keydir.
+	 * List of all keys in keydir.
 	 *
 	 * @var array
 	 */
 	private static $_keys = [];
 
 	/**
-	 * Path to the key file of the user.
+	 * Path to the keydir directory.
 	 *
 	 * @var string
 	 */
