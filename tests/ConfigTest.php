@@ -119,6 +119,11 @@ class ConfigTest extends TestCase
 		$this->assertEquals(2, count($config->getRepositoriesForUser($a)));
 	}
 
+	/**
+	 * Test if the keys get returned.
+	 *
+	 * @return void
+	 */
 	public function testGetKeys()
 	{
 		$config = new Config(__DIR__ . '/fixtures/test.conf', false);

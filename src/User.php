@@ -82,13 +82,18 @@ class User
 	/**
 	 * Remove key from config.
 	 *
-	 * @param string $path Relative path in keydir
-	 *
-	 * @return void
+	 * @param int $index
+	 * @return boolean
 	 */
-	public function removeKey($path)
+	public function removeKey($index)
 	{
-		return @unlink(self::$_keyPath . DIRECTORY_SEPARATOR . $path);
+		if (isset(self::$_keys[$this->_name][$index])) {
+			$path = self::$_keys[$this->_name][$index];
+			unset(self::$_keys[$this->_name][$index]);
+			return unlink($path);
+		}
+
+		return false;
 	}
 
 	/**
