@@ -388,6 +388,27 @@ class Config
 		return $config;
 	}
 
+	/**
+	 * Save config changes.
+	 *
+	 * @return bool
+	 */
+	public function save()
+	{
+		$config = $this->generateConfig();
+
+		if (!is_writable($this->_path))
+			throw new PhpGitoliteException(sprintf('Gitolite config file %s is not writable!', $this->_path), self::ERROR_CONFIG_NOT_WRITABLE);
+
+		return file_put_contents($this->_path, $config) !== false;
+	}
+
+	/**
+	 * Save config as new file.
+	 *
+	 * @param string $path
+	 * @return bool
+	 */
 	public function saveAs($path)
 	{
 		$config = $this->generateConfig();
@@ -452,12 +473,14 @@ class Config
 	 * Commit latest changes.
 	 *
 	 * @param string $message
-	 * @return void
+	 * @return boolean
 	 */
 	public function commit($message = '[php-gitolite] Updated config')
 	{
 		$this->_git->addAllChanges();
 		$this->_git->commit($message);
+
+		return true;
 	}
 
 	/**
@@ -470,6 +493,8 @@ class Config
 	public function push($remote = null, array $params = null)
 	{
 		$this->_git->push($remote, $params);
+
+		return true;
 	}
 
 	/**
@@ -480,10 +505,18 @@ class Config
 	 * @param array $params
 	 * @return void
 	 */
-	public function commitAndPush($message = '[php-gitolite] Updated config', $remote = null, array $params = null)
+	public function saveAndPush($message = '[php-gitolite] Updated config', $remote = null, array $params = null)
 	{
-		$this->commit($message);
-		$this->push($remote, $params);
+		if (!$this->save())
+			return false;
+
+		if (!$this->commit($message))
+			return false;
+
+		if (!$this->push($remote, $params))
+			return false;
+
+		return true;
 	}
 
 	/**
