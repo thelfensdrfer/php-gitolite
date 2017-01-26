@@ -14,7 +14,7 @@ class Permission
 	/**
 	 * Permission type.
 	 *
-	 * @var string
+	 * @var int
 	 */
 	private $_permission = null;
 
