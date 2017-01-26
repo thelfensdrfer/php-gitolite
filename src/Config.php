@@ -28,7 +28,7 @@ class Config
 	 *
 	 * @var array
 	 */
-	private $_repostitories = [];
+	private $_repositories = [];
 
 	/**
 	 * List of all groups.
@@ -149,13 +149,28 @@ class Config
 	 * @param string $name
 	 * @return Repository
 	 */
-	protected function createOrFindRepository($name)
+	public function createOrFindRepository($name)
 	{
-		if (isset($this->_repostitories[$name]))
-			return $this->_repostitories[$name];
+		if (isset($this->_repositories[$name]))
+			return $this->_repositories[$name];
 
-		$this->_repostitories[$name] = new Repository($name);
-		return $this->_repostitories[$name];
+		$this->_repositories[$name] = new Repository($name);
+		return $this->_repositories[$name];
+	}
+
+	/**
+	 * Delete repository.
+	 *
+	 * @param string $name
+	 * @return bool
+	 */
+	public function deleteRepository($name)
+	{
+		if (!isset($this->_repositories[$name]))
+			return false;
+
+		unset($this->_repositories[$name]);
+		return true;
 	}
 
 	/**
@@ -364,7 +379,7 @@ class Config
 		if (count($this->_groups))
 			$config .= "\n";
 
-		foreach ($this->_repostitories as $name => $repository) {
+		foreach ($this->_repositories as $name => $repository) {
 			$config .= 'repo ' . $name . "\n";
 			$permissions = $repository->getPermissions();
 			foreach ($permissions as $permission) {
@@ -436,7 +451,7 @@ class Config
 	 */
 	public function &getRepositories()
 	{
-		return $this->_repostitories;
+		return $this->_repositories;
 	}
 
 	/**
@@ -539,7 +554,7 @@ class Config
 		}
 
 		$out .= PHP_EOL . '## REPOSITORIES' . PHP_EOL . PHP_EOL;
-		foreach ($this->_repostitories as $repository) {
+		foreach ($this->_repositories as $repository) {
 			$out .= (string) $repository . PHP_EOL;
 		}
 
