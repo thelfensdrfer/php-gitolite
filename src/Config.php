@@ -159,6 +159,20 @@ class Config
 	}
 
 	/**
+	 * Find repository.
+	 *
+	 * @param string $name
+	 * @return Repository|null
+	 */
+	public function findRepository($name)
+	{
+		if (isset($this->_repositories[$name]))
+			return $this->_repositories[$name];
+
+		return null;
+	}
+
+	/**
 	 * Delete repository.
 	 *
 	 * @param string $name
@@ -359,6 +373,11 @@ class Config
 		}
 	}
 
+	/**
+	 * Generate config contents based on currently stored settings.
+	 *
+	 * @return string
+	 */
 	protected function generateConfig()
 	{
 		$config = '';
